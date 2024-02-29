@@ -212,7 +212,8 @@ public class DBUserStorageProvider implements UserStorageProvider,
         Integer maxResults)
     {
         log.infov("search for users with params: realm={0} params={1}", realm.getId(), params);
-        return internalSearchForUser(params.values().stream().findFirst().orElse(null), realm, null);
+        log.infov("param search: {0}", params.get(UserModel.SEARCH));
+        return internalSearchForUser(params.get(UserModel.SEARCH), realm, null);
     }
     
     @Override

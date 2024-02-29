@@ -67,6 +67,7 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
                 model.get("findBySearchTerm"),
                 model.get("findPasswordHash"),
                 model.get("hashFunction"),
+                model.get("hashSalt"),
                 rdbms,
                 model.get("allowKeycloakDelete", false),
                 model.get("allowDatabaseToOverwriteKeycloak", false)
@@ -230,18 +231,23 @@ public class DBUserStorageProviderFactory implements UserStorageProviderFactory<
                                            .property()
                                            .name("hashFunction")
                                            .label("Password hash function")
-                                           .helpText("Hash type used to match passwrod (md* e sha* uses hex hash digest)")
+                                           .helpText("Hash type used to match password (md* e sha* uses hex hash digest)")
                                            .type(ProviderConfigProperty.LIST_TYPE)
                                            .options("Blowfish (bcrypt)", "MD2", "MD5", "SHA-1", "SHA-256", "SHA3-224", "SHA3-256", "SHA3-384", "SHA3-512", "SHA-384", "SHA-512/224", "SHA-512/256", "SHA-512", "PBKDF2-SHA256", "Argon2d", "Argon2i", "Argon2id")
                                            .defaultValue("SHA-1")
+                                           .add()
+                                           .property()
+                                           .name("hashSalt")
+                                           .label("Hash salt")
+                                           .helpText("Salt to append on password before hash")
+                                           .type(ProviderConfigProperty.STRING_TYPE)
+                                           .defaultValue("")
                                            .add()
                                            .build();
     }
     
     private static class ProviderConfig {
-        private DataSourceProvider  dataSourceProvider = new DataSourceProvider();
+        private DataSourceProvider dataSourceProvider = new DataSourceProvider();
         private QueryConfigurations queryConfigurations;
     }
-    
-    
 }

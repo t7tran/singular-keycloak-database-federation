@@ -13,11 +13,12 @@ public class QueryConfigurations {
     private final int findBySearchTermParamsCount;
     private final String findPasswordHash;
     private final String hashFunction;
+    private final String hashSalt;
     private final RDBMS  RDBMS;
     private final boolean allowKeycloakDelete;
     private final boolean allowDatabaseToOverwriteKeycloak;
 
-    public QueryConfigurations(String count, String listAll, String findById, String findByUsername, String findByEmail, String findBySearchTerm, String findPasswordHash, String hashFunction, RDBMS RDBMS, boolean allowKeycloakDelete, boolean allowDatabaseToOverwriteKeycloak) {
+    public QueryConfigurations(String count, String listAll, String findById, String findByUsername, String findByEmail, String findBySearchTerm, String findPasswordHash, String hashFunction, String hashSalt, RDBMS RDBMS, boolean allowKeycloakDelete, boolean allowDatabaseToOverwriteKeycloak) {
         this.count = count;
         this.listAll = listAll;
         this.findById = findById;
@@ -27,6 +28,7 @@ public class QueryConfigurations {
         this.findBySearchTermParamsCount = (int)findBySearchTerm.chars().filter(ch -> ch == '?').count();
         this.findPasswordHash = findPasswordHash;
         this.hashFunction = hashFunction;
+        this.hashSalt = hashSalt;
         this.RDBMS = RDBMS;
         this.allowKeycloakDelete = allowKeycloakDelete;
         this.allowDatabaseToOverwriteKeycloak = allowDatabaseToOverwriteKeycloak;
@@ -71,6 +73,8 @@ public class QueryConfigurations {
     public String getHashFunction() {
         return hashFunction;
     }
+
+    public String getHashSalt() { return hashSalt; }
 
     public boolean isArgon2() {
         return hashFunction.contains("Argon2");
