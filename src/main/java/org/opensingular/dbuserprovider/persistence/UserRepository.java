@@ -71,7 +71,10 @@ public class UserRepository {
                 log.infov("Query: {0} params: {1} ", query, Arrays.toString(params));
                 try (PreparedStatement statement = c.prepareStatement(query)) {
                     if (params != null) {
+                        log.debugv("Parameter length: {0}", params.length);
+
                         for (int i = 1; i <= params.length; i++) {
+                            log.debugv("param {0}: {1}", i, params[i - 1].toString());
                             statement.setObject(i, params[i - 1]);
                         }
                     }
@@ -98,10 +101,12 @@ public class UserRepository {
             while (rs.next()) {
                 Map<String, String> result = new HashMap<>();
                 for (String col : columnsFound) {
+                    log.debugv("Column \"{0}\": Value: \"{1}\"", col, rs.getString(col));
                     result.put(col, rs.getString(col));
                 }
                 data.add(result);
             }
+            log.debugv("Rows found: {0}", data.size());
             return data;
         } catch (Exception e) {
             throw new DBUserStorageException(e.getMessage(), e);
@@ -138,6 +143,7 @@ public class UserRepository {
     }
     
     public int getUsersCount(String search) {
+        log.debugv("getUsersCount({0})", search);
         if (search == null || search.isEmpty()) {
             return Optional.ofNullable(doQuery(queryConfigurations.getCount(), null, this::readInt)).orElse(0);
         } else {
@@ -147,6 +153,7 @@ public class UserRepository {
     }
     
     private Object[] searchTermParams(String search) {
+        log.debugv("searchTermParams({0})", search);
         if (queryConfigurations.getFindBySearchTermParamsCount() == 1)
             return new String[] {search};
         String[] terms = new String[queryConfigurations.getFindBySearchTermParamsCount()];
@@ -155,46 +162,58 @@ public class UserRepository {
     }
     
     public Map<String, String> findUserById(String id) {
+        log.debugv("findUserById({0})", id);
         return Optional.ofNullable(doQuery(queryConfigurations.getFindById(), null, this::readMap, id))
                        .orElse(Collections.emptyList())
                        .stream().findFirst().orElse(null);
     }
     
     public Optional<Map<String, String>> findUserByUsername(String username) {
+        log.debugv("findUserByUsername({0})", username);
         return Optional.ofNullable(doQuery(queryConfigurations.getFindByUsername(), null, this::readMap, username))
                        .orElse(Collections.emptyList())
                        .stream().findFirst();
     }
     
     public Optional<Map<String, String>> findUserByEmail(String email) {
+        log.debugv("findUserByEmail({0})", email);
         return Optional.ofNullable(doQuery(queryConfigurations.getFindByEmail(), null, this::readMap, email))
             .orElse(Collections.emptyList())
             .stream().findFirst();
     }
     
     public List<Map<String, String>> findUsers(String search, PagingUtil.Pageable pageable) {
-        if (search == null || search.isEmpty()) {
+        log.debugv("findUsers({0})", search);
+        if (search == null || search.isEmpty() || search.equals("*")) {
             return doQuery(queryConfigurations.getListAll(), pageable, this::readMap);
         }
         return doQuery(queryConfigurations.getFindBySearchTerm(), pageable, this::readMap, searchTermParams(search));
     }
     
     public boolean validateCredentials(String username, String password) {
+
+        String hashSalt = queryConfigurations.getHashSalt();
+        String passwordToHash = password;
+
+        if (hashSalt != null && !hashSalt.isEmpty()) {
+            passwordToHash += hashSalt;
+        }
         String hash = Optional.ofNullable(doQuery(queryConfigurations.getFindPasswordHash(), null, this::readString, username)).orElse("");
+
         if (queryConfigurations.isBlowfish()) {
-            return !hash.isEmpty() && BCrypt.checkpw(password, hash);
+            return !hash.isEmpty() && BCrypt.checkpw(passwordToHash, hash);
         } else if (queryConfigurations.isArgon2()) {
-            return !hash.isEmpty() && ARGON2.get(ARGON2TYPES.get(queryConfigurations.getHashFunction())).verify(hash, password.toCharArray());
+            return !hash.isEmpty() && ARGON2.get(ARGON2TYPES.get(queryConfigurations.getHashFunction())).verify(hash, passwordToHash.toCharArray());
         } else {
             String hashFunction = queryConfigurations.getHashFunction();
 
             if(hashFunction.equals("PBKDF2-SHA256")){
                 String[] components = hash.split("\\$");
-                return new PBKDF2SHA256HashingUtil(password, components[2], Integer.valueOf(components[1])).validatePassword(components[3]);
+                return new PBKDF2SHA256HashingUtil(passwordToHash, components[2], Integer.valueOf(components[1])).validatePassword(components[3]);
             }
 
             MessageDigest digest   = DigestUtils.getDigest(hashFunction);
-            byte[]        pwdBytes = StringUtils.getBytesUtf8(password);
+            byte[]        pwdBytes = StringUtils.getBytesUtf8(passwordToHash);
             return Objects.equals(Hex.encodeHexString(digest.digest(pwdBytes)), hash);
         }
     }

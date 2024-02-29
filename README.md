@@ -26,7 +26,7 @@ Keycloak User Storage SPI for Relational Databases (Keycloak User Federation, su
 
 - Keycloak User federation provider with SQL
 - Keycloak User federation using existing database
-- Keycloak  database user provider
+- Keycloak database user provider
 - Keycloak MSSQL Database Integration 
 - Keycloak SQL Server Database Integration 
 - Keycloak Oracle Database Integration 
